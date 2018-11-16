@@ -1,0 +1,25 @@
+# récupérer dernière version de master
+git pull origin master
+
+# créer sa branche
+git checkout -b nom_branche
+
+# faire les modifications + commit (git add fichier + git commit -m "commentaire")
+
+# au cas-où quelqu'un a modifié
+git checkout master
+git pull origin master
+
+# copier les éventuelles modifications de ce quelqu'un
+git checkout nom_branche
+git rebase master
+
+# copier sur master ses propres modifications
+git checkout master
+git merge nom_branche
+
+# les envoyer sur github
+git push origin master
+
+# supprimer sa branche
+git branch -D nom_branche
