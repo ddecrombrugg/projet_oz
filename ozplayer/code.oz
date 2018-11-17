@@ -26,9 +26,36 @@ local
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+   fun {CreateListNotesNE Chord}
+      case Chord of nil then nil
+      [] H|T then
+	 {NoteToExtended H}|{CreateListNotesNE T}
+      else nil
+      end
+   end
+   
    fun {PartitionToTimedList Partition}
-      % TODO
-      nil
+      case Partition of nil then nil
+      [] H|T then
+	 case H of Atom then
+	    {NoteToExtended H}|{PartitionToTimedList T}
+	 [] note(name:Name octave:Octave sharp:Boolean duration:Duration instrument:Instrument) then
+	    note|{PartitionToTimedList T}
+	 [] H2|T2 then
+	    case H2 of Atom then
+	       {CreateListNotesNE H}|{PartitionToTimedList T}
+	    [] note(name:Name octave:Octave sharp:Boolean duration:Duration instrument:Instrument)
+	       H|{PartitionToTimedList T}
+	    else nil
+	    end
+	 [] duration(seconds:Seconds partition) then nil
+	 [] stretch(factor:Factor partition) then nil
+	 [] drone(note:Note amount:Amount) then nil
+	 [] transpose(semitones:Semitones partition) then nil
+	 else nil
+	 end
+      else nil
+      end  
    end
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
