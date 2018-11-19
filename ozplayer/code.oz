@@ -26,14 +26,6 @@ local
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-   fun {CreateListNotesNE Chord}
-      case Chord of nil then nil
-      [] H|T then
-	 {NoteToExtended H}|{CreateListNotesNE T}
-      else nil
-      end
-   end
-   
    fun {PartitionToTimedList Partition}
       case Partition of nil then nil
       [] H|T then
@@ -41,10 +33,12 @@ local
 	    {NoteToExtended H}|{PartitionToTimedList T}
 	 [] note(name:Name octave:Octave sharp:Boolean duration:Duration instrument:Instrument) then
 	    note|{PartitionToTimedList T}
+	 [] silence(duration:Duration) then
+	    silence|{PartitionToTimedList T}
 	 [] H2|T2 then
 	    case H2 of Atom then
 	       {CreateListNotesNE H}|{PartitionToTimedList T}
-	    [] note(name:Name octave:Octave sharp:Boolean duration:Duration instrument:Instrument)
+	    [] note(name:Name octave:Octave sharp:Boolean duration:Duration instrument:Instrument) then
 	       H|{PartitionToTimedList T}
 	    else nil
 	    end
@@ -71,22 +65,23 @@ local
    Start
 
    % Uncomment next line to insert your tests.
-   % \insert 'tests.oz'
+   \insert 'tests.oz'
    % !!! Remove this before submitting.
 in
-   Start = {Time}
+   %Start = {Time}
 
    % Uncomment next line to run your tests.
    % {Test Mix PartitionToTimedList}
+   {TestNotes P2T}
 
    % Add variables to this list to avoid "local variable used only once"
    % warnings.
-   {ForAll [NoteToExtended Music] Wait}
+   %{ForAll [NoteToExtended Music] Wait}
    
    % Calls your code, prints the result and outputs the result to `out.wav`.
    % You don't need to modify this.
-   {Browse {Project.run Mix PartitionToTimedList Music 'out.wav'}}
+   %{Browse {Project.run Mix PartitionToTimedList Music 'out.wav'}}
    
    % Shows the total time to run your code.
-   {Browse {IntToFloat {Time}-Start} / 1000.0}
+   %{Browse {IntToFloat {Time}-Start} / 1000.0}
 end
