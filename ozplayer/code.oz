@@ -72,7 +72,7 @@ in
 
    % Uncomment next line to run your tests.
    % {Test Mix PartitionToTimedList}
-   {TestNotes P2T}
+   {TestNotes PartitionToTimedList}
 
    % Add variables to this list to avoid "local variable used only once"
    % warnings.
