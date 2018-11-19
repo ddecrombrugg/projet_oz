@@ -26,6 +26,14 @@ local
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+   fun {CreateListNotesNE Chord}
+      case Chord of nil then nil
+      [] H|T then
+	 {NoteToExtended H}|{CreateListNotesNE T}
+      else nil
+      end
+   end
+
    fun {PartitionToTimedList Partition}
       case Partition of nil then nil
       [] H|T then
