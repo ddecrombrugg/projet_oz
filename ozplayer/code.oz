@@ -34,26 +34,55 @@ local
       end
    end
 
+   fun {Strech Factor L}
+      case L of nil then nil
+      [] H|T then
+	 case H of note then
+	    note(name:H.name octave:H.octave sharp:H.sharp duration:Factor*H.duration instrument:H.instrument)|{Stretch T}
+	 [] H2|T2 then
+	    {Stretch H2}|{Strech T2}|{Strech T}
+	 else nil
+	 end
+      end
+   end
+
+   fun {FindTotDuration L Acc}
+      case L of nil then Acc
+      [] H|T then
+	 case H of note then
+	    {FinTotDuration T Acc+H.duration}
+	 [] H2|T2 then
+	    {FindDurationTot T2 Acc+H2.duration+{FinTotDuration T 0}}
+	 else 0
+	 end
+      else 0
+      end
+   end	    
+
    fun {PartitionToTimedList Partition}
       case Partition of nil then nil
       [] H|T then
 	 case H of Atom then
 	    {NoteToExtended H}|{PartitionToTimedList T}
-	 [] note(name:Name octave:Octave sharp:Boolean duration:Duration instrument:Instrument) then
-	    note|{PartitionToTimedList T}
-	 [] silence(duration:Duration) then
-	    silence|{PartitionToTimedList T}
+	 [] note then
+	    H|{PartitionToTimedList T}
+	 [] silence then
+	    H|{PartitionToTimedList T}
 	 [] H2|T2 then
 	    case H2 of Atom then
 	       {CreateListNotesNE H}|{PartitionToTimedList T}
-	    [] note(name:Name octave:Octave sharp:Boolean duration:Duration instrument:Instrument) then
+	    [] note then
 	       H|{PartitionToTimedList T}
 	    else nil
 	    end
-	 [] duration(seconds:Seconds partition) then nil
-	 [] stretch(factor:Factor partition) then nil
-	 [] drone(note:Note amount:Amount) then nil
-	 [] transpose(semitones:Semitones partition) then nil
+	 [] duration then
+	    {Strech (H.duration div {FindTotDuration {PartitionToTimedList H.1} 0}) {PartitionToTimedList H.1}}|{PartitionToTimedList T} 
+	 [] stretch then
+	    {Stretch H.factor {PartitionToTimedList H.1}}|{PartitionToTimedList T}
+	 [] drone then
+	    
+	 [] transpose then
+	    
 	 else nil
 	 end
       else nil
