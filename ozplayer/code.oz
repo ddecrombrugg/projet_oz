@@ -26,6 +26,7 @@ local
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+   % Create a list of Notes (Chord) in a list of ExtendedNotes (ExtendedChord)
    fun {CreateListNotesNE Chord}
       case Chord of nil then nil
       [] H|T then
@@ -34,6 +35,7 @@ local
       end
    end
 
+   % Multiply every partition-item in a partition (L) by a factor (Factor)
    fun {Strech Factor L}
       case L of nil then nil
       [] H|T then
@@ -41,11 +43,11 @@ local
 	    note(name:H.name octave:H.octave sharp:H.sharp duration:Factor*H.duration instrument:H.instrument)|{Stretch T}
 	 [] H2|T2 then
 	    {Stretch H2}|{Strech T2}|{Strech T}
-	 else nil
 	 end
       end
    end
 
+   % Calculate the total duration of a partition (L)
    fun {FindTotDuration L Acc}
       case L of nil then Acc
       [] H|T then
@@ -53,9 +55,7 @@ local
 	    {FinTotDuration T Acc+H.duration}
 	 [] H2|T2 then
 	    {FindDurationTot T2 Acc+H2.duration+{FinTotDuration T 0}}
-	 else 0
 	 end
-      else 0
       end
    end	    
 
@@ -80,12 +80,10 @@ local
 	 [] stretch then
 	    {Stretch H.factor {PartitionToTimedList H.1}}|{PartitionToTimedList T}
 	 [] drone then
-	    
+	    nil
 	 [] transpose then
-	    
-	 else nil
+	    nil
 	 end
-      else nil
       end  
    end
 
