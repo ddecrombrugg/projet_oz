@@ -47,7 +47,9 @@ local
 		 instrument:H.instrument)|{Stretch Factor T}
 	 [] H2|T2 then
 	    {Stretch Factor H2}|{Stretch Factor T2}|{Stretch Factor T}
+	 else nil
 	 end
+      else nil
       end
    end
 
@@ -55,11 +57,15 @@ local
    fun {FindTotDuration L Acc}
       case L of nil then Acc
       [] H|T then
-	 case H of note then
+	 case {Label H} of 'note' then
 	    {FindTotDuration T Acc+H.duration}
-	 [] H2|T2 then
-	    {FindTotDuration T2 Acc+H2.duration+{FindTotDuration T 0}}
+	 else
+	    case H of H2|T2 then
+	       {FindTotDuration T2 Acc+H2.duration+{FindTotDuration T 0}}
+	    else 0
+	    end
 	 end
+      else 0
       end
    end
 
@@ -85,8 +91,10 @@ local
 	       end
 	    [] Atom then
 	       {NoteToExtended H}|{PartitionToTimedList T}
+	    else nil
 	    end
 	 end
+      else nil
       end
    end
    
@@ -137,7 +145,7 @@ local
    % !!! Remove this before submitting.
 in
    % Tests persos
-   {Browse {PartitionToTimedList [[a b] duration(seconds:3 [a c#5 b]) c c [c c c] c#7]}}
+   {Browse {PartitionToTimedList [[a b] stretch(factor:3 [a c#5 b]) c c [c c c] c#7]}}
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
