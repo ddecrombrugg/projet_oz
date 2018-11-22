@@ -9,11 +9,19 @@ local
    fun {NoteToExtended Note}
       case Note
       of Name#Octave then
-         note(name:Name octave:Octave sharp:true duration:1.0 instrument:none)
+	 note(name:Name
+	      octave:Octave
+	      sharp:true
+	      duration:1.0
+	      instrument:none)
       [] Atom then
          case {AtomToString Atom}
          of [_] then
-            note(name:Atom octave:4 sharp:false duration:1.0 instrument:none)
+	    note(name:Atom
+		 octave:4
+		 sharp:false
+		 duration:1.0
+		 instrument:none)
          [] [N O] then
             note(name:{StringToAtom [N]}
                  octave:{StringToInt [O]}
@@ -35,24 +43,58 @@ local
       end
    end
 
-   % Multiply every partition-item in a partition (L) by a factor (Factor)
+   fun {TransposeInt Alias Semitones OctaveAcc}
+      if Semitones==0 then [Alias OctaveAcc]
+      else	 
+	 if (Alias==1)andthen(Semitones<0) then
+	    {TransposeInt 12 Semitones+1 OctaveAcc-1}
+	 elseif (Alias==12)andthen(Semitones>0) then
+	    {TransposeInt 1 Semitones-1 OctaveAcc+1}
+	 else
+	    if Semitones>0 then
+	       {TransposeInt Alias+1 Semitones-1 OctaveAcc}
+	    else
+	       {TransposeInt Alias-1 Semitones+1 OctaveAcc}
+	    end
+	 end
+      end
+   end
+
+   % Multiply every partition-item duration in a partition (L) by a factor (Factor)
    fun {Stretch Factor L}
       case L of nil then nil
       [] H|T then
-	 case H of note then
+	 case {Label H} of 'note' then
 	    note(name:H.name
 		 octave:H.octave
 		 sharp:H.sharp
 		 duration:Factor*H.duration
 		 instrument:H.instrument)|{Stretch Factor T}
-	 [] H2|T2 then
-	    {Stretch Factor H2}|{Stretch Factor T2}|{Stretch Factor T}
-	 else nil
+	 else
+	    case H of H2|T2 then
+	       local L2 in
+		  L2 = note(name:H2.name
+			    octave:H2.octave
+			    sharp:H2.sharp
+			    duration:Factor*H2.duration
+			    instrument:H2.instrument)|{Stretch Factor T2}
+		  L2|{Stretch Factor T}
+	       end
+	    else nil
+	    end
 	 end
       else nil
       end
    end
 
+   % Multiply
+   fun {Multiply Sound Amount}
+      if Amount==0 then nil
+      else
+	 Sound|{Multiply Sound Amount-1}
+      end
+   end
+   
    % Calculate the total duration of a partition (L)
    fun {FindTotDuration L Acc}
       case L of nil then Acc
@@ -61,11 +103,20 @@ local
 	    {FindTotDuration T Acc+H.duration}
 	 else
 	    case H of H2|T2 then
-	       {FindTotDuration T2 Acc+H2.duration+{FindTotDuration T 0}}
-	    else 0
+	       {FindTotDuration T Acc+H2.duration}
+	    else 0.0
 	    end
 	 end
-      else 0
+      else 0.0
+      end
+   end
+
+   % Append
+   fun {Append Xs Ys}
+      case Xs
+      of nil then Ys
+      [] X|Xr then X|{Append Xr Ys}
+      else nil
       end
    end
 
@@ -77,10 +128,20 @@ local
 	 [] 'note' then
 	    H|{PartitionToTimedList T}
 	 [] 'duration' then
-	    {Stretch (H.seconds div {FindTotDuration {PartitionToTimedList H.1} 0}) {PartitionToTimedList H.1}}|{PartitionToTimedList T}
+	    local L in
+	       L = {Stretch (H.seconds / {FindTotDuration {PartitionToTimedList H.1} 0.0}) {PartitionToTimedList H.1}}
+	       {Append L {PartitionToTimedList T}}
+	    end
 	 [] 'stretch' then
-	    {Stretch H.factor {PartitionToTimedList H.1}}|{PartitionToTimedList T}
-	 [] 'drone' then nil
+	    local L in
+	       L = {Stretch H.factor {PartitionToTimedList H.1}}
+	       {Append L {PartitionToTimedList T}}
+	    end
+	 [] 'drone' then
+	    local L in
+	       L = {Multiply {PartitionToTimedList H.note} H.amount}
+	       {Append L {PartitionToTimedList T}}
+	    end
 	 [] 'transpose' then nil
 	 else
 	    case H of H2|T2 then
@@ -97,36 +158,6 @@ local
       else nil
       end
    end
-   
-   /*
-   fun {PartitionToTimedList Partition}
-      case Partition of nil then nil
-      [] H|T then
-	 case H of Atom then
-	    {NoteToExtended H}|{PartitionToTimedList T}
-	 [] note then 
-	    H|{PartitionToTimedList T}
-	 [] silence then
-	    H|{PartitionToTimedList T}
-	 [] H2|T2 then
-	    case H2 of Atom then
-	       {CreateListNotesNE H}|{PartitionToTimedList T}
-	    [] note then %%%
-	       H|{PartitionToTimedList T}
-	    else nil
-	    end
-	 [] duration then
-	    {Stretch (H.duration div {FindTotDuration {PartitionToTimedList H.1} 0}) {PartitionToTimedList H.1}}|{PartitionToTimedList T} 
-	 [] stretch then
-	    {Stretch H.factor {PartitionToTimedList H.1}}|{PartitionToTimedList T}
-	 [] drone then
-	    nil
-	 [] transpose then
-	    nil
-	 end
-      end  
-   end
-   */
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -145,7 +176,7 @@ local
    % !!! Remove this before submitting.
 in
    % Tests persos
-   {Browse {PartitionToTimedList [[a b] stretch(factor:3 [a c#5 b]) c c [c c c] c#7]}}
+   
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
