@@ -43,19 +43,139 @@ local
       end
    end
 
-   fun {TransposeInt Alias Semitones OctaveAcc}
+   fun {TransposeInt1 Alias Semitones OctaveAcc}
       if Semitones==0 then [Alias OctaveAcc]
       else	 
-	 if (Alias==1)andthen(Semitones<0) then
-	    {TransposeInt 12 Semitones+1 OctaveAcc-1}
-	 elseif (Alias==12)andthen(Semitones>0) then
-	    {TransposeInt 1 Semitones-1 OctaveAcc+1}
+	 if (Alias==1) andthen (Semitones<0) then
+	    {TransposeInt1 (12) (Semitones+1) (OctaveAcc-1)}
+	 elseif (Alias==12) andthen (Semitones>0) then
+	    {TransposeInt1 (1) (Semitones-1) (OctaveAcc+1)}
 	 else
 	    if Semitones>0 then
-	       {TransposeInt Alias+1 Semitones-1 OctaveAcc}
+	       {TransposeInt1 (Alias+1) (Semitones-1) OctaveAcc}
 	    else
-	       {TransposeInt Alias-1 Semitones+1 OctaveAcc}
+	       {TransposeInt1 (Alias-1) (Semitones+1) OctaveAcc}
 	    end
+	 end
+      end
+   end
+
+   fun {TransposeInt2 L Semitones}
+      case L of H|T then
+	 case {Label H} of 'note' then
+	    local L1 in
+	       L1 = {TransposeInt1 H.name Semitones 0}
+	       note(name:L1.1
+		    octave:H.octave + L1.2.1
+		    sharp:H.sharp
+		    duration:H.duration
+		    instrument:H.instrument)|{TransposeInt2 T Semitones}
+	    end
+	 else
+	    case H of H2|T2 then
+	       local L1 L2 in
+		  L1 = {TransposeInt1 H2.name Semitones 0}
+		  L2 = note(name:L1.1
+			    octave:H2.octave + L1.2.1
+			    sharp:H2.sharp
+			    duration:H2.duration
+			    instrument:H2.instrument)|{TransposeInt2 T2 Semitones}
+		  L2|{TransposeInt2 T Semitones}
+	       end
+	    else nil
+	    end
+	 end
+      else nil
+      end
+   end
+	    
+
+   fun {Link1 L}
+      local R in
+	 R = allnotes(c:1 d:3 e:5 f:6 g:8 a:10 b:12)
+	 case L of nil then nil
+	 [] H|T then
+	    case {Label H} of 'note' then
+	       if H.sharp then
+		  note(name:(R.(H.name)+1)
+		       octave:H.octave
+		       sharp:H.sharp
+		       duration:H.duration
+		       instrument:H.instrument)|{Link1 T}
+	       else
+		  note(name:(R.(H.name))
+		       octave:H.octave
+		       sharp:H.sharp
+		       duration:H.duration
+		       instrument:H.instrument)|{Link1 T}
+	       end
+	    else
+	       case H of H2|T2 then
+		  local L2 in
+		     if H2.sharp then
+			L2 = note(name:(R.(H2.name)+1)
+				  octave:H2.octave
+				  sharp:H2.sharp
+				  duration:H2.duration
+				  instrument:H2.instrument)|{Link1 T2}
+		     else
+			L2 = note(name:(R.(H2.name))
+				  octave:H2.octave
+				  sharp:H2.sharp
+				  duration:H2.duration
+				  instrument:H2.instrument)|{Link1 T2}
+		     end
+		     L2|{Link1 T}
+		  end
+	       else nil
+	       end	       
+	    end
+	 else nil
+	 end
+      end
+   end
+
+   fun {Link2 L}
+      local R in
+	 R = allnotes(1:c 2:c 3:d 4:d 5:e 6:f 7:f 8:g 9:g 10:a 11:a 12:b)
+	 case L of nil then nil
+	 [] H|T then
+	    case {Label H} of 'note' then
+	       if (H.name==2) orelse (H.name==4) orelse (H.name==7) orelse (H.name==9) orelse (H.name==11) then
+		  note(name:R.(H.name)
+		       octave:H.octave
+		       sharp:true
+		       duration:H.duration
+		       instrument:H.instrument)|{Link2 T}
+	       else
+		  note(name:R.(H.name)
+		       octave:H.octave
+		       sharp:false
+		       duration:H.duration
+		       instrument:H.instrument)|{Link2 T}
+	       end							      
+	    else
+	       case H of H2|T2 then
+		  local L2 in
+		     if (H2.name==2) orelse (H2.name==4) orelse (H2.name==7) orelse (H2.name==9) orelse (H2.name==11) then
+			L2 = note(name:R.(H2.name)
+				  octave:H2.octave
+				  sharp:true
+				  duration:H2.duration
+				  instrument:H2.instrument)|{Link2 T2}
+		     else
+			L2 = note(name:R.(H2.name)
+				  octave:H2.octave
+				  sharp:false
+				  duration:H2.duration
+				  instrument:H2.instrument)|{Link2 T2}
+		     end
+		     L2|{Link2 T}
+		  end
+	       else nil
+	       end	       
+	    end
+	 else nil
 	 end
       end
    end
@@ -139,10 +259,14 @@ local
 	    end
 	 [] 'drone' then
 	    local L in
-	       L = {Multiply {PartitionToTimedList H.note} H.amount}
+	       L = {Multiply {PartitionToTimedList [H.note]}.1 H.amount}
 	       {Append L {PartitionToTimedList T}}
 	    end
-	 [] 'transpose' then nil
+	 [] 'transpose' then
+	    local L in
+	       L = {TransposeInt2 {Link1 {PartitionToTimedList H.1}} H.semitones}
+	       {Append {Link2 L} {PartitionToTimedList T}}
+	    end
 	 else
 	    case H of H2|T2 then
 	       case {Label H2} of 'note' then
@@ -161,10 +285,10 @@ local
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-   %fun {Mix P2T Music}
+   fun {Mix P2T Music}
       % TODO
-   %   {Project.readFile 'wave/animaux/cow.wav'}
-   %end
+      {Project.readFile 'wave/animaux/cow.wav'}
+   end
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -176,7 +300,10 @@ local
    % !!! Remove this before submitting.
 in
    % Tests persos
-   
+   local P in
+      P = [a b#7 c drone(note:g amount:4) transpose(semitones:4 [a a [a b]])]
+      {Browse{PartitionToTimedList P}}
+   end
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
