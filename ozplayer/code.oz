@@ -301,7 +301,7 @@ local
 in
    % Tests persos
    local P in
-      P = [a b#7 c drone(note:g amount:4) transpose(semitones:4 [a a [a b]])]
+      P = [transpose(semitones:2 [duration(seconds:18.7 [a b])])]
       {Browse{PartitionToTimedList P}}
    end
 
