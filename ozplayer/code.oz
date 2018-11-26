@@ -71,16 +71,24 @@ local
 		    duration:H.duration
 		    instrument:H.instrument)|{TransposeInt2 T Semitones}
 	    end
+	 [] 'silence' then
+	    silence(duration:H.duration)|{TransposeInt2 T Semitones}
 	 else
 	    case H of H2|T2 then
 	       local L1 L2 in
-		  L1 = {TransposeInt1 H2.name Semitones 0}
-		  L2 = note(name:L1.1
-			    octave:H2.octave + L1.2.1
-			    sharp:H2.sharp
-			    duration:H2.duration
-			    instrument:H2.instrument)|{TransposeInt2 T2 Semitones}
-		  L2|{TransposeInt2 T Semitones}
+		  case {Label H2} of 'note' then
+		     L1 = {TransposeInt1 H2.name Semitones 0}
+		     L2 = note(name:L1.1
+			       octave:H2.octave + L1.2.1
+			       sharp:H2.sharp
+			       duration:H2.duration
+			       instrument:H2.instrument)|{TransposeInt2 T2 Semitones}
+		     L2|{TransposeInt2 T Semitones}
+		  [] 'silence' then
+		     L2 = silence(duration:H2.duration)|{TransposeInt2 T2 Semitones}
+		     L2|{TransposeInt2 T Semitones}
+		  else nil
+		  end
 	       end
 	    else nil
 	    end
@@ -109,23 +117,31 @@ local
 		       duration:H.duration
 		       instrument:H.instrument)|{Link1 T}
 	       end
+	    [] 'silence' then
+	       silence(duration:H.duration)|{Link1 T}
 	    else
 	       case H of H2|T2 then
 		  local L2 in
-		     if H2.sharp then
-			L2 = note(name:(R.(H2.name)+1)
-				  octave:H2.octave
-				  sharp:H2.sharp
-				  duration:H2.duration
-				  instrument:H2.instrument)|{Link1 T2}
-		     else
-			L2 = note(name:(R.(H2.name))
-				  octave:H2.octave
-				  sharp:H2.sharp
-				  duration:H2.duration
-				  instrument:H2.instrument)|{Link1 T2}
+		     case {Label H2} of 'note' then
+			if H2.sharp then
+			   L2 = note(name:(R.(H2.name)+1)
+				     octave:H2.octave
+				     sharp:H2.sharp
+				     duration:H2.duration
+				     instrument:H2.instrument)|{Link1 T2}
+			else
+			   L2 = note(name:(R.(H2.name))
+				     octave:H2.octave
+				     sharp:H2.sharp
+				     duration:H2.duration
+				     instrument:H2.instrument)|{Link1 T2}
+			end
+			L2|{Link1 T}
+		     [] 'silence' then
+			L2 = silence(duration:H2.duration)|{Link1 T2}
+			L2|{Link1 T}
+		     else nil
 		     end
-		     L2|{Link1 T}
 		  end
 	       else nil
 	       end	       
@@ -153,24 +169,32 @@ local
 		       sharp:false
 		       duration:H.duration
 		       instrument:H.instrument)|{Link2 T}
-	       end							      
+	       end
+	    [] 'silence' then
+	       silence(duration:H.duration)|{Link2 T}
 	    else
 	       case H of H2|T2 then
 		  local L2 in
-		     if (H2.name==2) orelse (H2.name==4) orelse (H2.name==7) orelse (H2.name==9) orelse (H2.name==11) then
-			L2 = note(name:R.(H2.name)
-				  octave:H2.octave
-				  sharp:true
-				  duration:H2.duration
-				  instrument:H2.instrument)|{Link2 T2}
-		     else
-			L2 = note(name:R.(H2.name)
-				  octave:H2.octave
-				  sharp:false
-				  duration:H2.duration
-				  instrument:H2.instrument)|{Link2 T2}
-		     end
+		     case {Label H2} of 'note' then 
+			if (H2.name==2) orelse (H2.name==4) orelse (H2.name==7) orelse (H2.name==9) orelse (H2.name==11) then
+			   L2 = note(name:R.(H2.name)
+				     octave:H2.octave
+				     sharp:true
+				     duration:H2.duration
+				     instrument:H2.instrument)|{Link2 T2}
+			else
+			   L2 = note(name:R.(H2.name)
+				     octave:H2.octave
+				     sharp:false
+				     duration:H2.duration
+				     instrument:H2.instrument)|{Link2 T2}
+			end
 		     L2|{Link2 T}
+		     [] 'silence' then
+			L2 = silence(duration:H2.duration)|{Link2 T2}
+			L2|{Link2 T}
+		     else nil
+		     end
 		  end
 	       else nil
 	       end	       
@@ -190,15 +214,23 @@ local
 		 sharp:H.sharp
 		 duration:Factor*H.duration
 		 instrument:H.instrument)|{Stretch Factor T}
+	 [] 'silence' then
+	    silence(duration:Factor*H.duration)|{Stretch Factor T}
 	 else
 	    case H of H2|T2 then
 	       local L2 in
-		  L2 = note(name:H2.name
-			    octave:H2.octave
-			    sharp:H2.sharp
-			    duration:Factor*H2.duration
-			    instrument:H2.instrument)|{Stretch Factor T2}
-		  L2|{Stretch Factor T}
+		  case {Label H2} of 'note' then
+		     L2 = note(name:H2.name
+			       octave:H2.octave
+			       sharp:H2.sharp
+			       duration:Factor*H2.duration
+			       instrument:H2.instrument)|{Stretch Factor T2}
+		     L2|{Stretch Factor T}
+		  []'silence' then
+		     L2 = silence(duration:Factor*H2.duration)|{Stretch Factor T2}
+		     L2|{Stretch Factor T}
+		  else nil
+		  end
 	       end
 	    else nil
 	    end
@@ -220,6 +252,8 @@ local
       case L of nil then Acc
       [] H|T then
 	 case {Label H} of 'note' then
+	    {FindTotDuration T Acc+H.duration}
+	 [] 'silence' then
 	    {FindTotDuration T Acc+H.duration}
 	 else
 	    case H of H2|T2 then
@@ -285,9 +319,85 @@ local
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+   fun {Height EN}
+      local Ref in
+	 Ref = 58.0
+	 case {Label EN} of 'silence' then 0.0
+	 [] 'note' then
+	    ({IntToFloat EN.octave}*12.0) + {IntToFloat EN.name} - Ref
+	 else 0.0
+	 end
+      end
+   end
+
+   fun {NoteToSample EN Acc}
+      local F in
+	 if Acc==0.0 then nil
+	 else
+	    case {Label EN} of 'silence' then
+	       F = 0.0
+	    else
+	       F = {Pow 2.0 {Height EN}/12.0}*440.0
+	    end
+	    (0.5*{Sin 2.0*3.14159265359*F*(EN.duration-((Acc-1.0)/44100.0))})|{NoteToSample EN Acc-1.0}
+	 end
+      end
+   end
+
+   /*
+   fun {NoteToSample2 L}
+      case L of H|T then
+a	 case {Label H} of 'note' then
+	    {NoteToSample1 H H.duration*44100.0}
+	 [] 'silence'
+   */
+	    
+
    fun {Mix P2T Music}
-      % TODO
-      {Project.readFile 'wave/animaux/cow.wav'}
+      case Music of nil then nil
+      [] H|T then
+	 case {Label H} of 'samples' then
+	    {Append H {Mix P2T T}}
+	 [] 'partition' then
+	    local Flat in
+	       Flat = {Link1 {P2T H.1}}
+	       case Flat of H2|T2 then
+		  case {Label H2} of 'note' then
+		     local L in
+			L = {Append {NoteToSample H2 H2.duration*44100.0} {Mix P2T T2}}
+			{Append L {Mix P2T T}}
+		     end
+		  [] 'silence' then
+		     local L in
+			L = {Append {NoteToSample H2 H2.duration*44100.0} {Mix P2T T2}}
+			{Append L {Mix P2T T}}
+		     end
+		  else
+		     case H2 of H3|T3 then
+			local L1 L2 in
+			   L1 = {Append {NoteToSample H3 H3.duration*44100.0} {Mix P2T T3}}
+			   L2 = L1|{Mix P2T T2}
+			   {Append L2 {Mix P2T T}}
+			end
+		     else nil
+		     end
+		  end
+	       else nil
+	       end
+	    end
+	 [] 'wave' then nil
+	 [] 'merge' then nil
+	 [] 'reverse' then nil
+	 [] 'repeat' then nil
+	 [] 'loop' then nil
+	 [] 'clip' then nil
+	 [] 'echo' then nil
+	 [] 'fade' then nil
+	 [] 'cut' then nil
+	 else nil
+	 end
+      else nil
+      end
    end
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -300,10 +410,11 @@ local
    % !!! Remove this before submitting.
 in
    % Tests persos
-   local P in
-      P = [transpose(semitones:2 [duration(seconds:18.7 [a b])])]
-      {Browse{PartitionToTimedList P}}
-   end
+	    
+	    local Music in
+	       Music = [partition([a])] 
+	       {Browse {Mix PartitionToTimedList Music}}
+	    end	    
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
