@@ -332,26 +332,34 @@ local
 
    fun {NoteToSample EN Acc}
       local F in
-	 if Acc==0.0 then nil
+	 if Acc==0 then nil
 	 else
 	    case {Label EN} of 'silence' then
 	       F = 0.0
 	    else
 	       F = {Pow 2.0 {Height EN}/12.0}*440.0
 	    end
-	    (0.5*{Sin 2.0*3.14159265359*F*(EN.duration-((Acc-1.0)/44100.0))})|{NoteToSample EN Acc-1.0}
+	    (0.5*{Sin 2.0*3.14159265359*F*({IntToFloat {FloatToInt EN.duration*44100.0}-(Acc-1)}/44100.0)})|{NoteToSample EN Acc-1}
 	 end
       end
    end
 
-   /*
-   fun {NoteToSample2 L}
+   fun {Sum L1 L2}
+      case L1 of H1|T1 then
+	 case L2 of H2|T2 then
+	    H1+H2|{Sum T1 T2}
+	 else nil
+	 end
+      else nil
+      end
+   end
+
+   fun {Divide L N}
       case L of H|T then
-a	 case {Label H} of 'note' then
-	    {NoteToSample1 H H.duration*44100.0}
-	 [] 'silence'
-   */
-	    
+	 (H/N)|{Divide T N}
+      else nil
+      end
+   end
 
    fun {Mix P2T Music}
       case Music of nil then nil
@@ -364,19 +372,20 @@ a	 case {Label H} of 'note' then
 	       case Flat of H2|T2 then
 		  case {Label H2} of 'note' then
 		     local L in
-			L = {Append {NoteToSample H2 H2.duration*44100.0} {Mix P2T T2}}
+			L = {Append {NoteToSample H2 {FloatToInt H2.duration*44100.0}} {Mix P2T [partition({Link2 T2})]}}
 			{Append L {Mix P2T T}}
 		     end
 		  [] 'silence' then
 		     local L in
-			L = {Append {NoteToSample H2 H2.duration*44100.0} {Mix P2T T2}}
+			L = {Append {NoteToSample H2 {FloatToInt H2.duration*44100.0}} {Mix P2T [partition({Link2 T2})]}}
 			{Append L {Mix P2T T}}
 		     end
 		  else
 		     case H2 of H3|T3 then
-			local L1 L2 in
-			   L1 = {Append {NoteToSample H3 H3.duration*44100.0} {Mix P2T T3}}
-			   L2 = L1|{Mix P2T T2}
+			local L11 L12 L2 in
+			   L11 = {Sum {NoteToSample H3 {FloatToInt H3.duration*44100.0}} {Mix P2T [partition({Link2 T3})]}}
+			   L12 = {Divide L11 {IntToFloat {List.length H2 $}}}
+			   L2 = {Append L12 {Mix P2T [partition({Link2 T2})]}}
 			   {Append L2 {Mix P2T T}}
 			end
 		     else nil
@@ -385,7 +394,8 @@ a	 case {Label H} of 'note' then
 	       else nil
 	       end
 	    end
-	 [] 'wave' then nil
+	 [] 'wave' then
+	    {Project.load H.1}
 	 [] 'merge' then nil
 	 [] 'reverse' then nil
 	 [] 'repeat' then nil
@@ -412,7 +422,7 @@ in
    % Tests persos
 	    
 	    local Music in
-	       Music = [partition([a])] 
+	       Music = [wave('Users/adrienbanse/Documents/projet_oz/ozplayer/wave/animals/cat.wav')]
 	       {Browse {Mix PartitionToTimedList Music}}
 	    end	    
 
