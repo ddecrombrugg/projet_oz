@@ -265,15 +265,6 @@ local
       end
    end
 
-   % Append
-   fun {Append Xs Ys}
-      case Xs
-      of nil then Ys
-      [] X|Xr then X|{Append Xr Ys}
-      else nil
-      end
-   end
-
    fun {PartitionToTimedList Partition}
       case Partition of nil then nil
       [] H|T then
@@ -345,12 +336,21 @@ local
    end
 
    fun {Sum L1 L2}
-      case L1 of H1|T1 then
-	 case L2 of H2|T2 then
-	    H1+H2|{Sum T1 T2}
-	 else nil
+      if L1==nil andthen L2==nil then nil
+      else
+	 case L1 of H1|T1 then
+	    if L2==nil then
+	       H1|{Sum T1 L2}
+	    else
+	       case L2 of H2|T2 then
+		  H1+H2|{Sum T1 T2}
+	       end
+	    end
+	 else
+	    case L2 of H2|T2 then
+	       H2|{Sum L1 T2}
+	    end
 	 end
-      else nil
       end
    end
 
@@ -361,11 +361,80 @@ local
       end
    end
 
+   fun {Merge P2T L}
+      case L of H|T then
+	 case H of F#M then
+	    {Sum {List.map {Mix P2T M} fun{$ I} I*F end} {Merge P2T T}}
+	 else nil
+	 end
+      else nil
+      end
+   end
+
+   fun {Multiply2 Music Amount}
+      if Amount==0 then nil
+      else
+	 {Append Music {Multiply2 Music Amount-1}}
+      end
+   end
+
+   fun {Cut S F L Acc}
+      if Acc==S-1 then nil
+      else
+	 if (F-Acc+S+1)>{List.length L} then
+	    0.0|{Cut S F L Acc-1}
+	 else	 
+	    {List.nth L F-Acc+S+1}|{Cut S F L Acc-1}
+	 end
+      end
+   end
+
+   fun {IntDivision A B}
+      if A/B > {IntToFloat {FloatToInt A/B}} then
+	 {IntToFloat {FloatToInt A/B}}
+      else
+	 {IntToFloat {FloatToInt A/B}-1}
+      end
+   end
+
+   fun {Clip L Bplus Bminus}
+      case L of H|T then
+	 if H>Bplus then
+	    Bplus|{Clip T Bplus Bminus}
+	 elseif H<Bminus then
+	    Bminus|{Clip T Bplus Bminus}
+	 else
+	    H|{Clip T Bplus Bminus}
+	 end
+      else nil
+      end
+   end
+
+   fun {Fade L D IO Acc}
+      if IO==0 then
+	 if Acc>1.0 then nil
+	 else
+	    case L of H|T then
+	       H*Acc|{Fade T D IO Acc+(1.0/D)}
+	    else nil
+	    end
+	 end
+      else
+	 if Acc<0.0 then nil
+	 else
+	    case L of H|T then
+	       H*Acc|{Fade T D IO Acc-(1.0/D)}
+	    else nil
+	    end
+	 end
+      end
+   end
+
    fun {Mix P2T Music}
       case Music of nil then nil
       [] H|T then
 	 case {Label H} of 'samples' then
-	    {Append H {Mix P2T T}}
+	    {Append H.1 {Mix P2T T}}
 	 [] 'partition' then
 	    local Flat in
 	       Flat = {Link1 {P2T H.1}}
@@ -395,15 +464,48 @@ local
 	       end
 	    end
 	 [] 'wave' then
-	    {Project.load H.1}
-	 [] 'merge' then nil
-	 [] 'reverse' then nil
-	 [] 'repeat' then nil
-	 [] 'loop' then nil
-	 [] 'clip' then nil
-	 [] 'echo' then nil
-	 [] 'fade' then nil
-	 [] 'cut' then nil
+	    {Project.readFile H.1}
+	 [] 'merge' then
+	    {Append {Merge P2T H.1} {Mix P2T T}}
+	 [] 'reverse' then
+	    {Append {List.reverse {Mix P2T H.1}} {Mix P2T T}}
+	 [] 'repeat' then
+	    {Append {Multiply2 {Mix P2T H.1} H.amount} {Mix P2T T}}
+	 [] 'loop' then
+	    local D A B L Mu in
+	       Mu = {Mix P2T H.1}
+	       D = {IntToFloat {List.length Mu}}/44100.0
+	       A = {IntDivision H.seconds D}
+	       B = H.seconds/D - A
+	       L = {Append {Multiply2 Mu {FloatToInt A}} {Cut 0 {FloatToInt B*{IntToFloat {List.length Mu}}} Mu {FloatToInt B*{IntToFloat {List.length Mu}}}}}
+	       {Append L {Mix P2T T}}
+	    end
+	 [] 'clip' then
+	    if H.low >= H.high then
+	       {Append {Mix P2T H.1} {Mix P2T T}}
+	    else
+	       {Append {Clip {Mix P2T H.1} H.high H.low} {Mix P2T T}}
+	    end
+	 [] 'echo' then
+	    local M L Echo in
+	       M = {Mix P2T H.1}
+	       Echo = [samples({Append {Multiply 0.0 {FloatToInt H.delay*44100.0}} M})]
+	       L = {Merge P2T [H.decay#Echo 1.0#[samples(M)]]}
+	       {Append L {Mix P2T T}}
+	    end
+	 [] 'fade' then
+	    local M S Start Out Mid L1 L2 in
+	       M = {Mix P2T H.1}
+	       S = {List.length M}
+	       Start = {Cut 0 {FloatToInt H.start*44100.0} M {FloatToInt H.start*44100.0}}
+	       Out = {Cut S-{FloatToInt H.out*44100.0}-1 S-1 M S-1}
+	       Mid = {Cut {FloatToInt H.start*44100.0}+1 S-{FloatToInt H.out*44100.0}-2 M S-{FloatToInt H.out*44100.0}-2}
+	       L1 = {Append {Fade Start H.start*44100.0 0 0.0} Mid}
+	       L2 = {Append L1 {Fade Out H.out*44100.0 1 1.0}}
+	       {Append L2 {Mix P2T T}}
+	    end
+	 [] 'cut' then
+	    {Append {Cut {FloatToInt H.start*44100.0} {FloatToInt H.finish*44100.0} {Mix P2T H.1} {FloatToInt H.finish*44100.0}} {Mix P2T T}}
 	 else nil
 	 end
       else nil
@@ -421,10 +523,16 @@ local
 in
    % Tests persos
 	    
-	    local Music in
-	       Music = [wave('Users/adrienbanse/Documents/projet_oz/ozplayer/wave/animals/cat.wav')]
-	       {Browse {Mix PartitionToTimedList Music}}
-	    end	    
+   local Music Mu1 Mu2 in
+      Mu1 = [partition([note(name:a
+	       octave:4
+	       sharp:false
+	       duration:0.0003
+	       instrument:none)])]
+      Music = [fade(start:0.0001 out:0.0001 Mu1)]
+      {Browse {Mix PartitionToTimedList Music}}
+      {Browse {Mix PartitionToTimedList Mu1}}
+   end	    
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
