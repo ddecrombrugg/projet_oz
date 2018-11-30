@@ -494,18 +494,20 @@ local
 	       {Append L {Mix P2T T}}
 	    end
 	 [] 'fade' then
-	    local M S Start Out Mid L1 L2 in
+	    local M S Start Out Mid L1 L2 F1 F2 in
 	       M = {Mix P2T H.1}
 	       S = {List.length M}
-	       Start = {Cut 0 {FloatToInt H.start*44100.0} M {FloatToInt H.start*44100.0}}
-	       Out = {Cut S-{FloatToInt H.out*44100.0}-1 S-1 M S-1}
-	       Mid = {Cut {FloatToInt H.start*44100.0}+1 S-{FloatToInt H.out*44100.0}-2 M S-{FloatToInt H.out*44100.0}-2}
-	       L1 = {Append {Fade Start H.start*44100.0 0 0.0} Mid}
-	       L2 = {Append L1 {Fade Out H.out*44100.0 1 1.0}}
+	       Start = {Cut 0 {FloatToInt H.start*44100.0}-1 M {FloatToInt H.start*44100.0}-1}
+	       Out = {Cut S-{FloatToInt H.out*44100.0} S-1 M S-1}
+	       Mid = {Cut {FloatToInt H.start*44100.0} S-{FloatToInt H.out*44100.0}-1 M S-{FloatToInt H.out*44100.0}-1}
+	       F1 = {Fade Start H.start*44100.0 0 0.0}
+	       F2 = {Fade Out (H.out*44100.0) 1 ((H.out*44100.0)-1.0)*(1.0/(H.out*44100.0))}
+	       L1 = {Append F1 Mid}
+	       L2 = {Append L1 F2}
 	       {Append L2 {Mix P2T T}}
 	    end
 	 [] 'cut' then
-	    {Append {Cut {FloatToInt H.start*44100.0} {FloatToInt H.finish*44100.0} {Mix P2T H.1} {FloatToInt H.finish*44100.0}} {Mix P2T T}}
+	    {Append {Cut {FloatToInt H.start*44100.0} {FloatToInt H.finish*44100.0}-1 {Mix P2T H.1} {FloatToInt H.finish*44100.0}-1} {Mix P2T T}}
 	 else nil
 	 end
       else nil
@@ -523,15 +525,19 @@ local
 in
    % Tests persos
 	    
-   local Music Mu1 Mu2 in
-      Mu1 = [partition([note(name:a
-	       octave:4
-	       sharp:false
-	       duration:0.0003
-	       instrument:none)])]
-      Music = [fade(start:0.0001 out:0.0001 Mu1)]
-      {Browse {Mix PartitionToTimedList Music}}
-      {Browse {Mix PartitionToTimedList Mu1}}
+   local Music Mu1 Mu2 Mu3 in
+      Mu1 = [partition([c d e c c d e c e f g e f g g a g f e c g a g f e c c g3 c c g3 c])]
+      Mu2 = [wave('/Users/adrienbanse/Documents/projet_oz/ozplayer/wave/instruments/bee_long_c4.wav')
+	     wave('/Users/adrienbanse/Documents/projet_oz/ozplayer/wave/instruments/bee_long_e4.wav')
+	     wave('/Users/adrienbanse/Documents/projet_oz/ozplayer/wave/instruments/bee_long_g4.wav')
+	     wave('/Users/adrienbanse/Documents/projet_oz/ozplayer/wave/instruments/bee_long_g4.wav')
+	     wave('/Users/adrienbanse/Documents/projet_oz/ozplayer/wave/instruments/bee_long_c4.wav')]
+      Mu3 = [loop(seconds:8.0 [{List.nth Mu2 1}])
+	     loop(seconds:6.0 [{List.nth Mu2 2}])
+	     loop(seconds:6.0 [{List.nth Mu2 3}])
+	     loop(seconds:6.0 [{List.nth Mu2 4}])
+	     loop(seconds:6.0 [{List.nth Mu2 5}])]
+      {Browse {Mix PartitionToTimedList [merge([0.25#Mu1 0.75#Mu1])]}}
    end	    
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
