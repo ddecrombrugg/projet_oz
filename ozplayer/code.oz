@@ -527,17 +527,17 @@ in
 	    
    local Music Mu1 Mu2 Mu3 in
       Mu1 = [partition([c d e c c d e c e f g e f g g a g f e c g a g f e c c g3 c c g3 c])]
-      Mu2 = [wave('/Users/adrienbanse/Documents/projet_oz/ozplayer/wave/instruments/bee_long_c4.wav')
-	     wave('/Users/adrienbanse/Documents/projet_oz/ozplayer/wave/instruments/bee_long_e4.wav')
-	     wave('/Users/adrienbanse/Documents/projet_oz/ozplayer/wave/instruments/bee_long_g4.wav')
-	     wave('/Users/adrienbanse/Documents/projet_oz/ozplayer/wave/instruments/bee_long_g4.wav')
-	     wave('/Users/adrienbanse/Documents/projet_oz/ozplayer/wave/instruments/bee_long_c4.wav')]
+      Mu2 = [wave('/Users/diegodecrombrugghe/Documents/projet_oz/ozplayer/wave/instruments/bziaou_a4.wav')
+	     wave('/Users/diegodecrombrugghe/Documents/projet_oz/ozplayer/wave/instruments/bziaou_a4.wav')
+	     wave('/Users/diegodecrombrugghe/Documents/projet_oz/ozplayer/wave/instruments/bziaou_a4.wav')
+	     wave('/Users/diegodecrombrugghe/Documents/projet_oz/ozplayer/wave/instruments/bziaou_a4.wav')
+	     wave('/Users/diegodecrombrugghe/Documents/projet_oz/ozplayer/wave/instruments/bziaou_a4.wav')]
       Mu3 = [loop(seconds:8.0 [{List.nth Mu2 1}])
 	     loop(seconds:6.0 [{List.nth Mu2 2}])
 	     loop(seconds:6.0 [{List.nth Mu2 3}])
 	     loop(seconds:6.0 [{List.nth Mu2 4}])
 	     loop(seconds:6.0 [{List.nth Mu2 5}])]
-      {Browse {Mix PartitionToTimedList [merge([0.25#Mu1 0.75#Mu1])]}}
+      {Browse {Project.run Mix PartitionToTimedList [merge([0.1#Mu1 0.9#Mu3])] 'out.wav'}}
    end	    
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
