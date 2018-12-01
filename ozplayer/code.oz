@@ -27,7 +27,7 @@ local
                  octave:{StringToInt [O]}
                  sharp:false
                  duration:1.0
-                 instrument: none)
+                 instrument:none)
          end
       end
    end
@@ -97,7 +97,6 @@ local
       end
    end
 	    
-
    fun {Link1 L}
       local R in
 	 R = allnotes(c:1 d:3 e:5 f:6 g:8 a:10 b:12)
@@ -300,7 +299,10 @@ local
 		  {CreateListNotesNE H}|{PartitionToTimedList T}
 	       end
 	    [] Atom then
-	       {NoteToExtended H}|{PartitionToTimedList T}
+	       if H==nil then nil
+	       else
+		  {NoteToExtended H}|{PartitionToTimedList T}
+	       end
 	    else nil
 	    end
 	 end
@@ -456,11 +458,14 @@ local
 		     end
 		  else
 		     case H2 of H3|T3 then
-			local L11 L12 L2 in
-			   L11 = {Sum {NoteToSample H3 {FloatToInt H3.duration*44100.0}} {Mix P2T [partition({Link2 T3})]}}
-			   L12 = {Divide L11 {IntToFloat {List.length H2 $}}}
-			   L2 = {Append L12 {Mix P2T [partition({Link2 T2})]}}
-			   {Append L2 {Mix P2T T}}
+			case H2 of nil then nil
+			else
+			   local L11 L12 L2 in
+			      L11 = {Sum {NoteToSample H3 {FloatToInt H3.duration*44100.0}} {Mix P2T [partition([{Link2 T3}])]}}
+			      L12 = {Divide L11 {IntToFloat {List.length H2 $}}}
+			      L2 = {Append L12 {Mix P2T [partition({Link2 T2})]}}
+			      {Append L2 {Mix P2T T}}
+			   end
 			end
 		     else nil
 		     end
@@ -518,51 +523,16 @@ local
       else nil
       end
    end
-
-   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-   %Start
-
-   % Uncomment next line to insert your tests.
-   %\insert 'Documents/projet_oz/ozplayer/tests.oz'
-   % !!! Remove this before submitting.
 in
-   % Tests persos
-	    
-   local Music Mu1 Mu2 Mu3 Mu4 in
-      Music = {Project.load 'joy.dj.oz'}
-      Mu1 = [partition([c d e c c d e c e f g e f g g a g f e c g a g f e c c g3 c c g3 c])]
-      Mu2 = [wave('/Users/adrienbanse/Documents/projet_oz/ozplayer/wave/instruments/bee_long_c4.wav')
-	     wave('/Users/adrienbanse/Documents/projet_oz/ozplayer/wave/instruments/bee_long_e4.wav')
-	     wave('/Users/adrienbanse/Documents/projet_oz/ozplayer/wave/instruments/bee_long_g4.wav')
-	     wave('/Users/adrienbanse/Documents/projet_oz/ozplayer/wave/instruments/bee_long_g4.wav')
-	     wave('/Users/adrienbanse/Documents/projet_oz/ozplayer/wave/instruments/bee_long_c4.wav')]
-      Mu3 = [loop(seconds:8.0 [{List.nth Mu2 1}])
-	     loop(seconds:6.0 [{List.nth Mu2 2}])
-	     loop(seconds:6.0 [{List.nth Mu2 3}])
-	     loop(seconds:6.0 [{List.nth Mu2 4}])
-	     loop(seconds:6.0 [{List.nth Mu2 5}])]
-      Mu4 = [fade(start:3.0 out:3.0 Mu1)]
-      {Browse {Project.run Mix PartitionToTimedList Music 'out.wav'}}
-   end	    
-
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+   % Tests
 
-   %Tests PVR
-   
-   %Start = {Time}
-
-   % Uncomment next line to run your tests.
-   %{Test Mix PartitionToTimedList}
-
-   % Add variables to this list to avoid "local variable used only once"
-   % warnings.
    %{ForAll [NoteToExtended Music] Wait}
-   
-   % Calls your code, prints the result and outputs the result to `out.wav`.
-   % You don't need to modify this.
-   %{Browse {Project.run Mix PartitionToTimedList Music 'out.wav'}}
-   
-   % Shows the total time to run your code.
-   %{Browse {IntToFloat {Time}-Start} / 1000.0}
+	    
+   local Music Start in
+      Start = {Time}
+      Music = {Project.load 'joy.dj.oz'}
+      {Browse {Project.run Mix PartitionToTimedList Music 'creation.wav'}}
+      {Browse {IntToFloat {Time}-Start}/1000.0}
+   end	    
 end
