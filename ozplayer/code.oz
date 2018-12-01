@@ -378,13 +378,18 @@ local
       end
    end
 
-   fun {Cut S F L Acc}
-      if Acc==S-1 then nil
+   fun {Cut S F L P}
+      if P==F+1 then nil
       else
-	 if (F-Acc+S+1)>{List.length L} then
-	    0.0|{Cut S F L Acc-1}
-	 else	 
-	    {List.nth L F-Acc+S+1}|{Cut S F L Acc-1}
+	 case L of H|T then
+	    if P<S then
+	       {Cut S F T P+1}
+	    elseif P=<F then
+	       H|{Cut S F T P+1}
+	    else
+	       0.0|{Cut S F T P+1}
+	    end
+	 else nil
 	 end
       end
    end
@@ -477,7 +482,7 @@ local
 	       D = {IntToFloat {List.length Mu}}/44100.0
 	       A = {IntDivision H.seconds D}
 	       B = H.seconds/D - A
-	       L = {Append {Multiply2 Mu {FloatToInt A}} {Cut 0 {FloatToInt B*{IntToFloat {List.length Mu}}} Mu {FloatToInt B*{IntToFloat {List.length Mu}}}}}
+	       L = {Append {Multiply2 Mu {FloatToInt A}} {Cut 0 {FloatToInt B*{IntToFloat {List.length Mu}}} Mu 0}}
 	       {Append L {Mix P2T T}}
 	    end
 	 [] 'clip' then
@@ -497,9 +502,9 @@ local
 	    local M S Start Out Mid L1 L2 F1 F2 in
 	       M = {Mix P2T H.1}
 	       S = {List.length M}
-	       Start = {Cut 0 {FloatToInt H.start*44100.0}-1 M {FloatToInt H.start*44100.0}-1}
-	       Out = {Cut S-{FloatToInt H.out*44100.0} S-1 M S-1}
-	       Mid = {Cut {FloatToInt H.start*44100.0} S-{FloatToInt H.out*44100.0}-1 M S-{FloatToInt H.out*44100.0}-1}
+	       Start = {Cut 0 {FloatToInt H.start*44100.0}-1 M 0}
+	       Out = {Cut S-{FloatToInt H.out*44100.0} S-1 M 0}
+	       Mid = {Cut {FloatToInt H.start*44100.0} S-{FloatToInt H.out*44100.0}-1 M 0}
 	       F1 = {Fade Start H.start*44100.0 0 0.0}
 	       F2 = {Fade Out (H.out*44100.0) 1 ((H.out*44100.0)-1.0)*(1.0/(H.out*44100.0))}
 	       L1 = {Append F1 Mid}
@@ -507,7 +512,7 @@ local
 	       {Append L2 {Mix P2T T}}
 	    end
 	 [] 'cut' then
-	    {Append {Cut {FloatToInt H.start*44100.0} {FloatToInt H.finish*44100.0}-1 {Mix P2T H.1} {FloatToInt H.finish*44100.0}-1} {Mix P2T T}}
+	    {Append {Cut {FloatToInt H.start*44100.0} {FloatToInt H.finish*44100.0}-1 {Mix P2T H.1} 0} {Mix P2T T}}
 	 else nil
 	 end
       else nil
@@ -516,7 +521,6 @@ local
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-   %Music = {Project.load 'joy.dj.oz'}
    %Start
 
    % Uncomment next line to insert your tests.
@@ -525,19 +529,21 @@ local
 in
    % Tests persos
 	    
-   local Music Mu1 Mu2 Mu3 in
+   local Music Mu1 Mu2 Mu3 Mu4 in
+      Music = {Project.load 'joy.dj.oz'}
       Mu1 = [partition([c d e c c d e c e f g e f g g a g f e c g a g f e c c g3 c c g3 c])]
-      Mu2 = [wave('/Users/diegodecrombrugghe/Documents/projet_oz/ozplayer/wave/instruments/bziaou_a4.wav')
-	     wave('/Users/diegodecrombrugghe/Documents/projet_oz/ozplayer/wave/instruments/bziaou_a4.wav')
-	     wave('/Users/diegodecrombrugghe/Documents/projet_oz/ozplayer/wave/instruments/bziaou_a4.wav')
-	     wave('/Users/diegodecrombrugghe/Documents/projet_oz/ozplayer/wave/instruments/bziaou_a4.wav')
-	     wave('/Users/diegodecrombrugghe/Documents/projet_oz/ozplayer/wave/instruments/bziaou_a4.wav')]
+      Mu2 = [wave('/Users/adrienbanse/Documents/projet_oz/ozplayer/wave/instruments/bee_long_c4.wav')
+	     wave('/Users/adrienbanse/Documents/projet_oz/ozplayer/wave/instruments/bee_long_e4.wav')
+	     wave('/Users/adrienbanse/Documents/projet_oz/ozplayer/wave/instruments/bee_long_g4.wav')
+	     wave('/Users/adrienbanse/Documents/projet_oz/ozplayer/wave/instruments/bee_long_g4.wav')
+	     wave('/Users/adrienbanse/Documents/projet_oz/ozplayer/wave/instruments/bee_long_c4.wav')]
       Mu3 = [loop(seconds:8.0 [{List.nth Mu2 1}])
 	     loop(seconds:6.0 [{List.nth Mu2 2}])
 	     loop(seconds:6.0 [{List.nth Mu2 3}])
 	     loop(seconds:6.0 [{List.nth Mu2 4}])
 	     loop(seconds:6.0 [{List.nth Mu2 5}])]
-      {Browse {Project.run Mix PartitionToTimedList [merge([0.1#Mu1 0.9#Mu3])] 'out.wav'}}
+      Mu4 = [fade(start:3.0 out:3.0 Mu1)]
+      {Browse {Project.run Mix PartitionToTimedList Music 'out.wav'}}
    end	    
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
