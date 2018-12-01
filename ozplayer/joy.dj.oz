@@ -5,7 +5,7 @@ local
    End2 = [stretch(factor:1.5 [a]) stretch(factor:0.5 [g]) stretch(factor:2.0 [g])]
    Interlude = [a a b g a stretch(factor:0.5 [b c5])
                     b g a stretch(factor:0.5 [b c5])
-                b a g a stretch(factor:2.0 [d]) ]
+                b a g a stretch(factor:2.0 [d])]
 
    % This is not a music.
    Partition = {Flatten [Tune End1 Tune End2 Interlude Tune End2]}
